@@ -1,0 +1,91 @@
+{
+  "title": "LUXOR",
+  "children": [
+    {
+      "title": "Playing",
+      "lines": [
+        "Plays itself: one hit",
+        "every 1/16 while Move",
+        "plays. Silent when",
+        "stopped. No notes needed.",
+        "Voice + FX: LXR-02 DRUM",
+        "engine (open source fw)."
+      ]
+    },
+    {
+      "title": "Knobs",
+      "lines": [
+        "1 VOLUME (not recorded)",
+        "2 P.ENV pitch env depth",
+        "3 FM AMT",
+        "4 MOD DEC pitch+FM decay",
+        "5 CUTOFF",
+        "6 DRIVE",
+        "7 DECAY amp env",
+        "8 PITCH scale notes C1-C5"
+      ]
+    },
+    {
+      "title": "Touch automation",
+      "lines": [
+        "REC pad on, touch a knob",
+        "on Play: writes while",
+        "touched, 8 points/16th.",
+        "Release: plays back.",
+        "Knobs 2-8 of page 1.",
+        "Shift+touch: clear knob",
+        "Shift+touch VOL: clear all"
+      ]
+    },
+    {
+      "title": "Pages",
+      "lines": [
+        "Osc: WAVE PWM ATTACK",
+        "  A.SLOPE P.SLOPE",
+        "FM: FM FREQ MOD WAV MODE",
+        "  TRANS TR VOL TR FRQ",
+        "Filter: RESO F.TYPE",
+        "  F.DRIVE PAN S.RATE",
+        "Then FX, then LFO:",
+        "  RATE SYNC AMOUNT",
+        "  WAVE RETRIG PHASE DEST"
+      ]
+    },
+    {
+      "title": "FX page",
+      "lines": [
+        "1 MIX dry/wet",
+        "2 FX TYPE: Off Drive",
+        "  Ring Comp Delay PingPong",
+        "3-7: that FX's knobs",
+        "Each FX keeps its own",
+        "settings."
+      ]
+    },
+    {
+      "title": "Scale page",
+      "lines": [
+        "Last page:",
+        "ROOT SCALE LENGTH TUNE FINE",
+        "LENGTH: 1/2-4 bars"
+      ]
+    },
+    {
+      "title": "Pads",
+      "lines": [
+        "Top right: REC on/off",
+        "Next: RANDOM phrase",
+        "Bottom 2 rows: 16 trigs",
+        "White = playing step"
+      ]
+    },
+    {
+      "title": "About",
+      "lines": [
+        "Unofficial. Not made or",
+        "endorsed by Erica Synths.",
+        "LXR code: GPL-3.0."
+      ]
+    }
+  ]
+}

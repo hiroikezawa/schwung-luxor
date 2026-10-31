@@ -1,0 +1,18 @@
+# The LXR firmware files the module compiles, relative to the repository.
+# Unmodified (third_party/lxr is a verbatim copy, see UPSTREAM_COMMIT):
+third_party/lxr/Core/Src/Soundengine/DSPAudio/ResonantFilter.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/SlopeEg2.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/Decay.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/distortion.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/transientGenerator.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/snapEg.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/dither.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/1PoleLp.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/wavetable.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/transientTables.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/FX/Ringmod.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/FX/Compressor.c
+third_party/lxr/Core/Src/Soundengine/DSPAudio/FX/Delay.c
+# Patched (each removes one out-of-bounds read; see the file headers):
+dsp/lxr/patched/Oscillator.c
+dsp/lxr/patched/Distortion.c
