@@ -1,452 +1,475 @@
 # LUXOR
 
-（モジュール ID: `luxor`）
+**English** | [日本語](README.ja.md)
 
-Schwung / Ableton Move 用の Sound Generator です。**Move の再生に合わせて 16 分音符ごとに
-自動で鳴る**パーカッション音源で、クリップや MIDI ノートを用意する必要はありません。
+(Module ID: `luxor`)
 
-音源には、Erica Synths のドラムマシン **LXR-02** の公開ファームウェア（GPL-3.0）に含まれる
-**DRUM ボイス**（FM ドラム音源）と、同じファームウェアの **FX（Drive / Ring / Comp / Delay /
-Ping-Pong）** のソースコードを、計算内容を変えずに移植して使っています。
-（LUXOR は Erica Synths とは無関係の非公式ソフトウェアです。末尾の注記を参照。）
+A Sound Generator for Schwung / Ableton Move. LUXOR is a percussion voice that **plays
+by itself on every 1/16 note, in time with Move's transport** — no clips or MIDI notes
+needed.
 
-ディケイを長めにして 16 分で連打したときの、前の音が残ったまま次の音が重なっていく
-「バキバキ」「ゴリゴリ」という音を狙っています。
+The sound engine is the **DRUM voice** (an FM drum voice) and the **FX (Drive / Ring /
+Comp / Delay / Ping-Pong)** from the open-source firmware (GPL-3.0) of Erica Synths'
+**LXR-02** drum machine, ported without changing the calculations.
+(LUXOR is unofficial software, not affiliated with Erica Synths. See the note at the end.)
 
-- **ノブの動きを記録する**: 一番右上の REC パッドを ON にしてノブに触れながら回すと、
-  その動きがループに記録され、毎回再生されます。触れている間だけ記録されます。
-- **パッドで鳴らすステップを選ぶ**: 下 2 段のパッドが 16 ステップの ON/OFF です。
-- **メロディを自動で作る**: REC の隣の RANDOM パッドを押すと、ランダムなメロディが
-  ステップごとの音程として書き込まれます。
-- **プリセットを 8 個保存できる**: 上から 2 段目のパッドに、音色・ノブの動き・
-  ステップ・スケールをまとめて保存し、タップ 1 回で呼び出せます。
-- **音程は最初からスケールの音だけ**: PITCH（ノブ 8）は、設定したスケール
-  （既定は C フリジアン）の音だけを選びます。
-- **LXR-02 の DRUM ボイスのパラメーターをほぼすべて操作できます**（オシレーター、
-  アンプ EG、ピッチ / FM エンベロープ、FM、トランジェント、フィルター、LFO、
-  ドライブ、サンプルレート）。
-- **LXR-02 の FX を 1 つ選んで掛けられます**。FX ごとの設定は種類を切り替えても残ります。
+It aims for the crunchy, grinding sound you get from a longish decay hammered at 1/16,
+where each hit is still ringing when the next one stacks on top of it.
+
+- **Record knob motion**: turn on the REC pad (top right) and turn a knob while touching
+  it. The motion is recorded into the loop and played back every pass. Only the time
+  you are touching the knob is recorded.
+- **Choose the steps on the pads**: the bottom two pad rows switch the 16 steps on and off.
+- **Generate a melody**: press the RANDOM pad next to REC and a random melody is written
+  in as a pitch per step.
+- **Store 8 presets**: the second pad row from the top saves the sound, the knob motion,
+  the steps and the scale together, and recalls them with one tap.
+- **Pitch stays in the scale**: PITCH (knob 8) only picks notes of the selected scale
+  (C Phrygian by default).
+- **Nearly every parameter of the LXR-02 DRUM voice is available** (oscillators, amp EG,
+  pitch / FM envelope, FM, transient, filter, LFO, drive, sample rate).
+- **One LXR-02 FX can be applied**. Each FX keeps its own settings when you switch types.
 
 ---
 
-## ビルド方法
+## Building
 
-このリポジトリ単体でビルドできます。Schwung のプラグイン API ヘッダー
-（`plugin_api_v1.h`、MIT）は `third_party/schwung/`、音源の元になった LXR-02 ファームウェアの
-ソースは `third_party/lxr/` に同梱しています（どちらも無変更のコピー）。
+This repository builds on its own. The Schwung plugin API header (`plugin_api_v1.h`,
+MIT) is bundled in `third_party/schwung/` and the source of the LXR-02 firmware the
+engine comes from in `third_party/lxr/` (both are unmodified copies).
 
 ```bash
 scripts/build.sh arm64
 ```
 
-→ `dist/luxor-module.tar.gz`（Move 用 AArch64 `dsp.so` + UI + ライセンス）
+→ `dist/luxor-module.tar.gz` (AArch64 `dsp.so` for Move + UI + licences)
 
-必要なもの: `aarch64-linux-gnu-gcc`、`python3`。ビルド時に
-`scripts/check_abi.py` が「AArch64 である」「glibc 2.34 以下」「`move_plugin_init_v2` を
-公開している」を検査し、満たさなければ失敗します。
+Requirements: `aarch64-linux-gnu-gcc`, `python3`. During the build `scripts/check_abi.py`
+checks that the library is AArch64, needs glibc 2.34 or older, and exports
+`move_plugin_init_v2`, and fails the build otherwise.
 
-テスト一式（ネイティブ ASan/UBSan の音源テスト、実 `dsp.so` の dlopen スモーク、
-元の LXR-02 ファームウェアのコードとの波形比較、UI テスト、最後に arm64 ビルド）:
+The full test suite (native ASan/UBSan engine tests, a dlopen smoke test of the real
+`dsp.so`, a waveform comparison against the original LXR-02 firmware code, UI tests and
+finally the arm64 build):
 
 ```bash
 scripts/test.sh
 ```
 
-UI テストには Node.js と、Schwung 本体のチェックアウト（ページエンジンと描画ハーネスを
-使うため）が必要です。このリポジトリと同じ階層の `../schwung`、または
-`SCHWUNG_ROOT=/path/to/schwung` を使います。見つからなければ UI テストだけ飛ばします
-（WSL では Windows 側の `node.exe` でも可）。
+The UI tests need Node.js and a checkout of Schwung itself (for its page engine and
+drawing harness): `../schwung` next to this repository, or
+`SCHWUNG_ROOT=/path/to/schwung`. If neither is found, only the UI tests are skipped
+(on WSL the Windows `node.exe` works too).
 
-## Move へのインストール
+## Installing on Move
 
-ビルド済みのパッケージは GitHub の **Releases** にあります
-（`luxor-module.tar.gz`）。自分でビルドする必要はありません。
+Built packages are on the GitHub **Releases** page (`luxor-module.tar.gz`); you do not
+need to build anything yourself.
 
-Schwung Manager（`http://<Move の IP>:7700`）経由でアップロードします:
+Upload through Schwung Manager (`http://<Move's IP>:7700`):
 
 ```bash
-# Releases からダウンロードしたものを入れる
+# install a package downloaded from Releases
 scripts/install.py http://move.local:7700 --package luxor-module.tar.gz
-# 自分でビルドしたもの（dist/）を入れる
+# install your own build (dist/)
 scripts/install.py http://move.local:7700
 ```
 
-（`--check` を付けると接続確認のみ）。インストール後、チェーンのスロットで
-Synth に **LUXOR** を選びます。
+(`--check` only tests the connection.) Then choose **LUXOR** as the Synth of a chain slot.
+You can also upload `luxor-module.tar.gz` from Schwung Manager's Modules page
+("Install custom").
 
-**更新したときは Move を再起動してください。** 読み込み済みの古い `dsp.so` が
-プロセスに残るため、スロットを選び直すだけでは新しい版になりません。
+**Restart Move after an update.** The old `dsp.so` stays loaded in the process, so
+re-selecting the slot does not switch to the new version.
 
-## 使い方（はじめての操作）
+## Getting started
 
-基本の流れは「スロットに入れる → 再生する → ノブで音を作る → パッドでパターンを作る
-→ REC でノブの動きを記録する」です。
+The basic flow is: put it in a slot → press Play → shape the sound with the knobs →
+build a pattern on the pads → record knob motion with REC.
 
-### 1. 音を出す
+### 1. Make a sound
 
-1. Schwung の画面（Shift+Vol+Track、またはトラックボタン長押し）でスロットを開き、
-   Synth に **LUXOR** を選びます。
-2. スロットの Synth（LUXOR）を開くと、LUXOR の画面になります。
-3. Move の **Play** を押します。LUXOR は**テンポに合わせて 16 分音符ごとに
-   自動で鳴ります**。停止すると約 25 ms で音が消え（FX の残響も含めて消えます）、
-   停止中は鳴りません。MIDI ノートでは鳴りません（Move のトラックのクリップは空でかまいません）。
+1. Open a slot on the Schwung screen (Shift+Vol+Track, or hold a track button) and
+   choose **LUXOR** as the Synth.
+2. Open the slot's Synth (LUXOR) to get the LUXOR screen.
+3. Press **Play** on Move. LUXOR **plays by itself on every 1/16 note, in time with the
+   tempo**. On Stop the sound fades out in about 25 ms (FX tails included) and nothing
+   plays while stopped. MIDI notes do not play it (the Move track's clips can stay empty).
 
-### 2. 音色を作る（メインページ）
+### 2. Shape the sound (main page)
 
-| ノブ | | | |
+| Knobs | | | |
 |---|---|---|---|
 | 1 VOLUME | 2 P.ENV | 3 FM AMT | 4 MOD DEC |
 | 5 CUTOFF | 6 DRIVE | 7 DECAY | 8 PITCH |
 
-まずは次から回すのがおすすめです。
+These are good ones to start with:
 
-- **DECAY**（ノブ 7）: 音の長さ。長くするほど、前の音が次の音に重なっていきます。
-- **P.ENV**（ノブ 2）と **MOD DEC**（ノブ 4）: 打った瞬間に音程が上から落ちてくる量と、
-  落ちる速さ。小さめでキック・タム、大きくすると「ピュン」というレーザー音になります。
-- **FM AMT**（ノブ 3）: FM の深さ。上げるほど金属的・ノイズっぽくなります。
-  FM の深さも MOD DEC の速さで 1 打ごとに減っていくので、ノブ 4 と組み合わせて使います。
-- **CUTOFF**（ノブ 5）: フィルターの明るさ（既定はローパス）。
-- **DRIVE**（ノブ 6）: ボイスの歪み。上げるほど太く荒い音になります。
-- **PITCH**（ノブ 8）: 音程。1 クリックごとにスケールの次の音に進み、画面にノート名が出ます。
+- **DECAY** (knob 7): note length. The longer it is, the more each hit overlaps the next.
+- **P.ENV** (knob 2) and **MOD DEC** (knob 4): how far the pitch drops from above at the
+  moment of the hit, and how fast. Small values give kicks and toms; large values give
+  a "pew" laser sound.
+- **FM AMT** (knob 3): FM depth. Higher is more metallic and noisy. The FM depth also
+  falls away at the MOD DEC rate on every hit, so use it together with knob 4.
+- **CUTOFF** (knob 5): filter brightness (low-pass by default).
+- **DRIVE** (knob 6): voice distortion. Higher is thicker and rougher.
+- **PITCH** (knob 8): pitch. Each click moves to the next note of the scale and the
+  note name appears on screen.
 
-**ジョグを回す**と、ほかのページに移ります（下の「ページ」表）。
+**Turn the jog wheel** to move to the other pages (see the page table below).
 
-### 3. パターンを作る（パッド）
+### 3. Build a pattern (pads)
 
-画面を開いている間、パッドは LUXOR 専用になります（Move 純正には届きません）。
+While the screen is open the pads belong to LUXOR (they do not reach Move).
 
 ```
-                              RANDOM  REC   ← 一番上の段の右 2 つ
- P1  P2  P3  P4  P5  P6  P7  P8             ← 上から 2 段目（プリセット）
-  9  10  11  12  13  14  15  16             ← 下から 2 段目
-  1   2   3   4   5   6   7   8             ← 一番下の段
+                              RANDOM  REC   ← right two pads of the top row
+ P1  P2  P3  P4  P5  P6  P7  P8             ← second row from the top (presets)
+  9  10  11  12  13  14  15  16             ← second row from the bottom
+  1   2   3   4   5   6   7   8             ← bottom row
 ```
 
-- **下 2 段**を押すと、そのステップで鳴らすかどうかを ON（明るい）/ OFF（暗い）で
-  切り替えます。白く光っているのが今鳴っているステップです。
-- **RANDOM** を押すと、新しいメロディが PITCH に書き込まれます。気に入るまで何度でも
-  押せます。音域はノブ 8 の PITCH が中心になります。REC が OFF でも、停止中でも使えます。
-  元に戻したいときは **Shift + ノブ 8 にタッチ**（PITCH の記録を消去）。
-  詳しくは下の「RANDOM（メロディの自動生成）」を見てください。
-- **上から 2 段目（P1–P8）** はプリセットです。**Shift を押しながらタップ**すると、
-  今の状態をそのパッドに保存します。**タップ**すると保存した状態を呼び出します。
-  詳しくは下の「プリセット」を見てください。
+- The **bottom two rows** switch whether that step plays: on (bright) / off (dark).
+  The step lit white is the one playing now.
+- **RANDOM** writes a new melody into PITCH. Press it as often as you like until you
+  get one you like. The range is centred on PITCH (knob 8). It works with REC off and
+  while stopped. To undo, **hold Shift and touch knob 8** (clears the PITCH recording).
+  See "RANDOM (melody generation)" below for details.
+- **The second row from the top (P1–P8)** holds presets. **Hold Shift and tap** to save
+  the current state to that pad; **tap** to recall it. See "Presets" below.
 
-### 4. ノブの動きを記録する（REC）
+### 4. Record knob motion (REC)
 
-1. **REC**（一番右上のパッド）を押して ON にします（真っ赤に光る。OFF は薄い色）。
-2. Move を再生した状態で、記録したいノブに**触れたまま回します**。
-   触れている間だけ、その動きがループに記録されます。指を離すと記録終了です。
-   回していなくても、触れている間はその値で上書きされます。
-3. 記録されたノブは、以後ループのたびにその動きを再生します。
-   ノブの値自体は書き換わらず、記録の無い部分ではノブの値で鳴ります。
-4. 消すとき: **Shift を押しながらノブに触れる**とそのノブの記録を消去。
-   **Shift + ノブ 1（VOLUME）に触れる**と全部消去。
-5. 記録が終わったら REC をもう一度押して OFF にすると、うっかり触っても記録されません。
+1. Press **REC** (the top-right pad) to turn it on (solid red; dim when off).
+2. With Move playing, **touch and turn** the knob you want to record. The motion is
+   recorded into the loop only while you are touching it; letting go ends the take.
+   Even without turning, touching overwrites with the current value.
+3. A recorded knob plays its motion back on every pass from then on. The knob's own
+   value does not change, and wherever nothing is recorded the knob's value plays.
+4. To erase: **hold Shift and touch a knob** to clear that knob's recording.
+   **Shift + touching knob 1 (VOLUME)** clears everything.
+5. When you are done, press REC again to turn it off so a stray touch records nothing.
 
-記録できるのはメインページのノブ 2〜8 の 7 つ（P.ENV・FM AMT・MOD DEC・CUTOFF・
-DRIVE・DECAY・PITCH）です。VOLUME は、うっかり記録して急に大音量になる事故を避けるため、
-記録しません。ほかのページ（FX ページを含む）のノブは今のところ記録しません。
+The seven main-page knobs 2–8 can be recorded (P.ENV, FM AMT, MOD DEC, CUTOFF, DRIVE,
+DECAY, PITCH). VOLUME is not recorded, to avoid a sudden blast from an accidental take.
+Knobs on the other pages (including the FX page) are not recorded for now.
 
-### 5. FX を掛ける
+### 5. Add an FX
 
-ジョグで **FX** ページへ移ります。
+Turn the jog wheel to the **FX** page.
 
-1. **ノブ 2（FX TYPE）**で FX を選びます: Off / Drive / Ring / Comp / Delay / PingPong。
-2. **ノブ 1（MIX）**で原音と FX 音の割合を決めます（0 % = 原音だけ、100 % = FX 音だけ）。
-3. **ノブ 3 から右**に、選んだ FX のパラメーターだけが並びます（下の「FX」表）。
-   その FX に無いノブは表示されず、回しても何も起きません。
+1. Choose the FX with **knob 2 (FX TYPE)**: Off / Drive / Ring / Comp / Delay / PingPong.
+2. Set the dry/wet balance with **knob 1 (MIX)** (0 % = dry only, 100 % = FX only).
+3. **From knob 3 on** only the selected FX's parameters are laid out (see the "FX"
+   table below). Knobs the FX does not use are not shown and do nothing.
 
-FX の設定は種類ごとに別々に保存され、FX TYPE を切り替えて戻っても元の設定のままです。
-FX TYPE を切り替えた瞬間は 10 ms のクロスフェードでつなぐので、プチッという音は出ません。
-Delay / PingPong を選び直したときは、ディレイの中身は空から始まります。
+Each FX type keeps its own settings, so switching FX TYPE away and back restores them.
+Switching FX TYPE crossfades over 10 ms, so it does not click. Re-selecting Delay /
+PingPong starts with an empty delay line.
 
-### 6. 終わるとき
+### 6. When you are done
 
-**Back** で画面を閉じます。パッドは Move に戻り、色も元に戻ります。
-音色・FX・記録・ステップの ON/OFF はセット（スロットのオートセーブ）に保存されます。
-REC パッドは保存されず、開き直すと必ず OFF から始まります。
+Close the screen with **Back**. The pads go back to Move with their colours restored.
+The sound, FX, recordings and step on/off are saved with the set (the slot's autosave).
+The REC pad is not saved and always starts off when the screen is reopened.
 
-## 操作方法（詳細）
+## Controls (reference)
 
-画面とノブは Schwung 標準のノブ画面（8 つのノブがページごとに並ぶ形）と同じ見た目・操作で、
-それにノブへのタッチ（記録用）とパッドの操作を加えています。
+The screen and knobs look and work like Schwung's standard knob screen (eight knobs per
+page), with knob touch (for recording) and the pads added.
 
-| 操作 | 動作 |
+| Control | Action |
 |---|---|
-| ノブ 1–8 | 現在ページのパラメータ（下のページ表） |
-| ノブにタッチ（REC ON・再生中） | メインページのノブ 2–8 の動きを記録 |
-| Shift + ノブにタッチ | そのノブの記録を消す。VOLUME（ノブ 1）なら**全部**消す |
-| Shift を押しながらノブを回す | 細かく調整 |
-| ジョグ回転 / クリック | ページ切替・項目選択（Schwung 標準のノブ画面と同じ） |
-| Back | 画面を閉じる（パッドは Move に戻る） |
+| Knobs 1–8 | Parameters of the current page (page table below) |
+| Touch a knob (REC on, playing) | Records the motion of main-page knobs 2–8 |
+| Shift + touch a knob | Clears that knob's recording; on VOLUME (knob 1) clears **everything** |
+| Hold Shift while turning | Fine adjustment |
+| Jog turn / click | Change page, select (same as Schwung's standard knob screen) |
+| Back | Close the screen (pads go back to Move) |
 
-ページ（LXR-02 本体のメニューのページ構成をもとに、Filter のすぐ後に FX、あまり触らない TUNE・FINE とループの長さ LENGTH は最後のページにまとめています）:
+Pages (based on the LXR-02's own menu pages, with FX right after Filter, and the
+rarely touched TUNE, FINE and the loop length LENGTH gathered on the last page):
 
-| ページ | ノブ 1–8 |
+| Page | Knobs 1–8 |
 |---|---|
-| 1 メイン | VOLUME・P.ENV・FM AMT・MOD DEC・CUTOFF・DRIVE・DECAY・PITCH |
-| 2 Osc | WAVE・PWM・ATTACK・A.SLOPE・P.SLOPE |
-| 3 FM | FM FREQ・MOD WAV・MODE・TRANS・TR VOL・TR FRQ |
-| 4 Filter | RESO・F.TYPE・F.DRIVE・PAN・S.RATE |
-| 5 FX | MIX・FX TYPE・（選んだ FX のパラメーター） |
-| 6 LFO | RATE・SYNC・AMOUNT・WAVE・RETRIG・PHASE・DEST |
-| 7 Scale | ROOT・SCALE・LENGTH（ステップ数）・TUNE・FINE |
+| 1 Main | VOLUME, P.ENV, FM AMT, MOD DEC, CUTOFF, DRIVE, DECAY, PITCH |
+| 2 Osc | WAVE, PWM, ATTACK, A.SLOPE, P.SLOPE |
+| 3 FM | FM FREQ, MOD WAV, MODE, TRANS, TR VOL, TR FRQ |
+| 4 Filter | RESO, F.TYPE, F.DRIVE, PAN, S.RATE |
+| 5 FX | MIX, FX TYPE, (the selected FX's parameters) |
+| 6 LFO | RATE, SYNC, AMOUNT, WAVE, RETRIG, PHASE, DEST |
+| 7 Scale | ROOT, SCALE, LENGTH (number of steps), TUNE, FINE |
 
-画面上部には、ループの位置（例 `LUXOR 5/16`）、REC ON 中は `ARM`、
-記録中は `REC`、PITCH に触れている間は音名（例 `PITCH Eb2`）が出ます。
-記録のあるノブは Schwung の「モジュレーション中」の表示（再生中の値が動く）になります。
+The top of the screen shows the loop position (e.g. `LUXOR 5/16`), `ARM` while REC is on,
+`REC` while recording, and the note name while PITCH is touched (e.g. `PITCH Eb2`).
+Knobs with a recording use Schwung's "modulated" display (the playing value moves).
 
-### ボイスのパラメーター
+### Voice parameters
 
-LXR-02 の DRUM ボイスの各パラメーターに、そのまま対応しています（本体では 0〜127 の値。
-TUNE・FM FREQ・FINE・PAN は本体の表示と同じ数値で表示します）。
+These map directly onto the LXR-02 DRUM voice parameters (0–127 on the hardware;
+TUNE, FM FREQ, FINE and PAN are shown with the same numbers as the hardware).
 
-| ノブ | 内容 |
+| Knob | What it does |
 |---|---|
-| VOLUME | ボイスの音量。0 % で完全に無音 |
-| DECAY | アンプ EG のディケイ。音が消えるまでの長さは 25 % で約 0.12 秒、50 % で約 0.3 秒、60 %（既定）で約 0.5 秒、75 % で約 1.2 秒、90 % で約 4 秒。短い側を細かく調整できるカーブ |
-| P.ENV | ピッチ EG の深さ（本体の MOD AMOUNT）。打った瞬間の音程が、25 % で約 3 倍（+19 半音）、50 % で約 9 倍、100 % で 33 倍まで上がる |
-| FM AMT | FM の深さ（本体の FM AMOUNT）。MODE が Mix のときは 2 つのオシレーターの混ぜ具合 |
-| MOD DEC | ピッチ EG のディケイ（本体の PITCH DECAY）。FM の深さもこの EG で減っていく |
-| CUTOFF | フィルター周波数。25 % で約 340 Hz、50 % で約 1 kHz、75 % で約 2.7 kHz、100 % で約 20 kHz |
-| DRIVE | ボイスの歪み（本体 MIX ページの DRIVE） |
-| PITCH | 打つ音程（スケールの音だけ）。C1（32.7 Hz）〜 C5（523 Hz）。C フリジアンで 29 音 |
-| TUNE | 音程の移調（半音、本体の COARSE。0 で PITCH の音程どおり） |
-| FINE | 微調整（約 ±50 セント） |
-| WAVE | メインオシレーターの波形: Sine / Tri / Saw / Rect / Noise / PWM |
-| PWM | WAVE が PWM のときのパルス幅 |
-| ATTACK | アンプ EG のアタック。0 % で即座に立ち上がる |
-| A.SLOPE | アンプ EG のカーブ |
-| P.SLOPE | ピッチ EG のカーブ（下の注記） |
-| FM FREQ | モジュレーター（2 つ目のオシレーター）の音程（半音、既定 +12） |
-| MOD WAV | モジュレーターの波形（WAVE と同じ 6 種類） |
-| MODE | FM（モジュレーターでメインを FM 変調）/ Mix（2 つを混ぜる） |
-| TRANS | アタックのトランジェント: Snap（音程の一瞬の跳ね上がり）/ Offset（波形の開始位置をずらしたクリック）/ Click / Click2 / Tick / Kick / Rim / Drop / Hat / Clap / Kick2 / Snare / Tom / Snap2（短いサンプル） |
-| TR VOL / TR FRQ | トランジェントの音量 / 速さ（音程） |
-| RESO | フィルターのレゾナンス |
-| F.TYPE | フィルターの種類: LP / HP / BP / UnityBP / Notch / Peak / LP2 / Off |
-| F.DRIVE | フィルターに入れる前の歪み |
-| PAN | 定位（-63 左 〜 +64 右）。打つたびにその時点の値が使われる |
-| S.RATE | サンプルレート（100 % で本来の音、下げるほどローファイ。0 % では音が止まる） |
-| RATE / SYNC | LFO の速さ / テンポ同期（Off / 4/1 / 2/1 / 1/1 / 1/2 / 1/3 / 1/4 / 1/6 / 1/8 / 1/12 / 1/16 / 1/32。Move のテンポに同期） |
-| AMOUNT | LFO の深さ（0 % で効かない） |
-| WAVE（LFO） | Sine / Tri / SawUp / SawDown / Square / Random / ExpUp / ExpDown |
-| RETRIG | On にすると、打つたびに LFO を PHASE の位置から始め直す |
-| PHASE | LFO の開始位置 |
-| DEST | LFO を掛ける先: TUNE / FINE / WAVE / PWM / ATTACK / DECAY / A.SLOPE / MOD DEC / P.SLOPE / P.ENV / FM AMT / FM FREQ / MOD WAV / MODE / TRANS / TR VOL / TR FRQ / CUTOFF / RESO / F.TYPE / F.DRIVE / VOLUME / PAN / S.RATE / DRIVE / FX P1–P4（選んでいる FX のノブ 3〜6） |
+| VOLUME | Voice level. 0 % is complete silence |
+| DECAY | Amp EG decay. Time until the sound dies away: about 0.12 s at 25 %, 0.3 s at 50 %, 0.5 s at 60 % (default), 1.2 s at 75 %, 4 s at 90 %. The curve gives the short end finer control |
+| P.ENV | Pitch EG depth (MOD AMOUNT on the hardware). The pitch at the moment of the hit rises to about 3× (+19 semitones) at 25 %, about 9× at 50 %, and 33× at 100 % |
+| FM AMT | FM depth (FM AMOUNT on the hardware). With MODE set to Mix, the balance of the two oscillators |
+| MOD DEC | Pitch EG decay (PITCH DECAY on the hardware). The FM depth also falls with this EG |
+| CUTOFF | Filter frequency. About 340 Hz at 25 %, 1 kHz at 50 %, 2.7 kHz at 75 %, 20 kHz at 100 % |
+| DRIVE | Voice distortion (DRIVE on the hardware's MIX page) |
+| PITCH | The pitch of the hit (scale notes only). C1 (32.7 Hz) to C5 (523 Hz); 29 notes in C Phrygian |
+| TUNE | Transpose in semitones (COARSE on the hardware; 0 plays PITCH as is) |
+| FINE | Fine tuning (about ±50 cents) |
+| WAVE | Main oscillator waveform: Sine / Tri / Saw / Rect / Noise / PWM |
+| PWM | Pulse width when WAVE is PWM |
+| ATTACK | Amp EG attack. 0 % rises instantly |
+| A.SLOPE | Amp EG curve |
+| P.SLOPE | Pitch EG curve (see the note below) |
+| FM FREQ | Pitch of the modulator (the second oscillator), in semitones (default +12) |
+| MOD WAV | Modulator waveform (the same six as WAVE) |
+| MODE | FM (the modulator frequency-modulates the main oscillator) / Mix (the two are mixed) |
+| TRANS | Attack transient: Snap (a brief pitch jump) / Offset (a click from shifting the waveform's start) / Click / Click2 / Tick / Kick / Rim / Drop / Hat / Clap / Kick2 / Snare / Tom / Snap2 (short samples) |
+| TR VOL / TR FRQ | Transient level / speed (pitch) |
+| RESO | Filter resonance |
+| F.TYPE | Filter type: LP / HP / BP / UnityBP / Notch / Peak / LP2 / Off |
+| F.DRIVE | Distortion before the filter |
+| PAN | Panning (-63 left to +64 right). The value at each hit is used |
+| S.RATE | Sample rate (100 % is the clean sound, lower is more lo-fi; 0 % stops the sound) |
+| RATE / SYNC | LFO speed / tempo sync (Off / 4/1 / 2/1 / 1/1 / 1/2 / 1/3 / 1/4 / 1/6 / 1/8 / 1/12 / 1/16 / 1/32, synced to Move's tempo) |
+| AMOUNT | LFO depth (0 % has no effect) |
+| WAVE (LFO) | Sine / Tri / SawUp / SawDown / Square / Random / ExpUp / ExpDown |
+| RETRIG | When On, every hit restarts the LFO from PHASE |
+| PHASE | LFO start position |
+| DEST | LFO destination: TUNE / FINE / WAVE / PWM / ATTACK / DECAY / A.SLOPE / MOD DEC / P.SLOPE / P.ENV / FM AMT / FM FREQ / MOD WAV / MODE / TRANS / TR VOL / TR FRQ / CUTOFF / RESO / F.TYPE / F.DRIVE / VOLUME / PAN / S.RATE / DRIVE / FX P1–P4 (knobs 3–6 of the selected FX) |
 
-- PITCH と TUNE・FM FREQ・PAN は、各 16 分の打つ瞬間の値が使われます。
-- ROOT や SCALE を変えると、PITCH と記録済みの PITCH の動きは、新しいスケールの一番近い音に
-  移ります。
-- P.SLOPE の最大は本体の 126 にあたります。本体の 127 ではピッチ EG の計算が 0 で割る形になり、
-  オシレーターが止まってしまうため、その 1 段だけ使えないようにしています。
+- PITCH, TUNE, FM FREQ and PAN take their value at the moment of each 1/16 hit.
+- Changing ROOT or SCALE moves PITCH, and any recorded PITCH motion, to the nearest note
+  of the new scale.
+- P.SLOPE's maximum corresponds to 126 on the hardware. At the hardware's 127 the pitch
+  EG divides by zero and the oscillator stops, so that single step is left out.
 
 ### FX
 
-| FX TYPE | ノブ 3〜 |
+| FX TYPE | Knobs 3 and up |
 |---|---|
-| Drive | TYPE（Tube / Fold / Clip）・DRIVE・COLOR・TONE・VOLUME |
-| Ring | WAVE（キャリアの波形）・FREQ |
-| Comp | RATIO（1:1〜8:1）・ATTACK・DECAY（リリース）・THRESH・GAIN |
-| Delay | TIME・RANGE・TONE・FDBK |
-| PingPong | TIME・RANGE・TONE・FDBK（左右に跳ねるディレイ） |
+| Drive | TYPE (Tube / Fold / Clip), DRIVE, COLOR, TONE, VOLUME |
+| Ring | WAVE (carrier waveform), FREQ |
+| Comp | RATIO (1:1 to 8:1), ATTACK, DECAY (release), THRESH, GAIN |
+| Delay | TIME, RANGE, TONE, FDBK |
+| PingPong | TIME, RANGE, TONE, FDBK (a delay bouncing left and right) |
 
-- Drive の Clip で COLOR を上げると、出力が入力に戻るため発振して鳴り続けます
-  （LXR-02 本体と同じ動作です）。
-- Delay / PingPong の FDBK を 100 % にしても、音が大きくなり続けることはありません。
-- 元のファームウェアにはリバーブのソースもありますが、公式ビルドでは無効になっている
-  （`USE_REVERB 0`）ため、LUXOR にも入れていません。
+- With Drive's Clip, raising COLOR feeds the output back to the input, so it
+  self-oscillates and keeps sounding (the same as the LXR-02 itself).
+- Delay / PingPong at 100 % FDBK never keeps getting louder.
+- The original firmware also contains reverb source code, but it is disabled in the
+  official build (`USE_REVERB 0`), so LUXOR does not include it either.
 
-### パッド
+### Pads
 
-**この画面を開いている間、パッドは LUXOR が占有します。**
-Move 純正の音源・シーケンサーにはパッド操作が届きません。画面を閉じるとパッドは
-Move に戻り、色も元に戻ります（Schwung の仕様で、占有できるのは画面表示中だけ）。
+**While this screen is open, LUXOR takes over the pads.** Move's own instruments and
+sequencer do not receive pad presses. Closing the screen gives the pads back to Move with
+their colours restored (in Schwung a module can only take the pads while its screen is
+shown).
 
 ```
-上段  .   .   .   .   .   .   RANDOM  REC      ← 一番右上が REC
-      P1  P2  P3  P4  P5  P6  P7      P8       ← プリセット 1–8
-      9  10  11  12  13  14   15      16       ← トリガー 9–16
-下段  1   2   3   4   5   6    7       8       ← トリガー 1–8
+top     .   .   .   .   .   .   RANDOM  REC      ← REC is the top-right pad
+        P1  P2  P3  P4  P5  P6  P7      P8       ← presets 1–8
+        9  10  11  12  13  14   15      16       ← triggers 9–16
+bottom  1   2   3   4   5   6    7       8       ← triggers 1–8
 ```
 
-| パッド | 動作 |
+| Pad | Action |
 |---|---|
-| **REC**（右上） | ノブの動きの記録の ON/OFF。**ON = 真っ赤、OFF = 薄い色** |
-| **RANDOM**（その左隣） | 新しいメロディを作り、PITCH の各ステップに書き込む |
-| 上から 2 段目（8 個） | プリセット。タップ = 呼び出し、Shift + タップ = 保存 |
-| 下 2 段（16 個） | 各ステップの発音の ON/OFF。ON = 明るい、OFF = 暗い、再生中のステップ = 白 |
-| そのほか | 何もしない |
+| **REC** (top right) | Knob-motion recording on/off. **On = solid red, off = dim** |
+| **RANDOM** (left of REC) | Generates a new melody and writes it into PITCH, step by step |
+| Second row from the top (8 pads) | Presets. Tap = recall, Shift + tap = save |
+| Bottom two rows (16 pads) | Each step's hit on/off. On = bright, off = dark, the playing step = white |
+| Everything else | Nothing |
 
-- 発音は Move の再生に合わせた 16 分音符で、ステップの頭は小節頭にそろいます。
-- OFF のステップでは新しく打たず、前の音がそのまま減衰します。記録したノブの動きは
-  OFF のステップでも止まらずに進みます。
-- LENGTH が 1/2 Bar のときは下から 2 段目（9–16）は消灯して使いません。2 Bars / 4 Bars の
-  ときは、同じ 16 ステップを小節ごとに繰り返します。
-- RANDOM の詳しい動きは次の節を見てください。
+- Hits are 1/16 notes locked to Move's transport, with the first step on the bar line.
+- An off step starts no new hit; the previous note keeps decaying. Recorded knob motion
+  keeps running through off steps.
+- With LENGTH at 1/2 Bar the second row from the bottom (9–16) is dark and unused. At
+  2 Bars / 4 Bars the same 16 steps repeat every bar.
+- See the next section for the details of RANDOM.
 
-### プリセット
+### Presets
 
-上から 2 段目の 8 個のパッドに、そのときの状態をまるごと保存できます。
+The eight pads of the second row from the top each store the whole current state.
 
-- **保存**: Shift を押しながらパッドをタップします。画面上部に `SAVED PRESET 3` の
-  ように表示されます。同じパッドに保存し直すと上書きされます。
-- **呼び出し**: パッドをタップします。再生中でも停止中でも、その場で切り替わります。
-  空のパッドを押すと `EMPTY 3 (SHIFT+PAD SAVES)` と表示され、何も変わりません。
-- **保存される内容**: 全ページのノブの値、記録したノブの動き、16 ステップの ON/OFF、
-  ROOT / SCALE / LENGTH。REC パッドの ON/OFF は保存されません。
-- **パッドの色**: 消灯 = 空、薄い色 = 保存済み、白 = 最後に呼び出した（保存した）もの。
-- 保存先は Move の `/data/UserData/schwung/luxor/presets.json` です。どのスロットの
-  LUXOR からも同じ 8 個が使えます。Set を切り替えても消えません。
+- **Save**: hold Shift and tap a pad. The top of the screen shows e.g. `SAVED PRESET 3`.
+  Saving to the same pad again overwrites it.
+- **Recall**: tap a pad. It switches on the spot, playing or stopped. An empty pad shows
+  `EMPTY 3 (SHIFT+PAD SAVES)` and changes nothing.
+- **What is saved**: the values of every knob on every page, the recorded knob motion,
+  the on/off of the 16 steps, and ROOT / SCALE / LENGTH. The REC pad's state is not saved.
+- **Pad colours**: off = empty, dim = saved, white = the one last recalled (or saved).
+- Presets are stored on Move in `/data/UserData/schwung/luxor/presets.json`. The same
+  eight are available to LUXOR in every slot and survive switching sets.
 
-### RANDOM（メロディの自動生成）
+### RANDOM (melody generation)
 
-RANDOM は、**`patterns/` に入っている MIDI ファイル（元フレーズ）を元に、毎回少し
-違うメロディを作って PITCH に書き込む**ボタンです。最初は 6 つの元フレーズが入っています。
-元フレーズは自分の MIDI に入れ替えられ、入れ替えると RANDOM が作るメロディも変わります
-（下の「元フレーズを入れ替える」）。
+RANDOM **builds a slightly different melody each time from the MIDI files (source
+phrases) in `patterns/` and writes it into PITCH**. Six source phrases are included.
+You can replace them with your own MIDI, which changes the melodies RANDOM makes
+(see "Replacing the source phrases" below).
 
-**押したときに起きること**
+**What happens when you press it**
 
-1. 元フレーズの中から 1 つをランダムに選びます（直前と同じものは選ばれにくくなっています）。
-2. その元フレーズの音の並びを「変化量 50 %」で変化させます。おおよそ半分の音が、
-   スケール上で隣の音に動く・オクターブ跳ぶ・前の音を繰り返す、などの形で変わり、
-   残りは元フレーズのままです。毎回違う結果になり、直前のメロディと同じにはなりません。
-3. 休符は作りません。元フレーズの休符の位置も音で埋め、全ステップに音程が入ります。
-4. できたメロディを PITCH の記録として、ループの各ステップに書き込みます。
-   - LENGTH が 1/2 Bar なら 8 ステップのメロディ、1 Bar 以上なら 16 ステップのメロディ
-     （8 ステップの変化を 2 つ続けたもの）を作り、2 / 4 Bars ではそれを繰り返します。
-   - それまでの PITCH の記録は、ループの長さの分だけ上書きされます。
-   - 鳴るかどうかは下 2 段のパッドで決まります。RANDOM はステップの ON/OFF を変えません。
+1. One source phrase is picked at random (the one used last time is less likely).
+2. Its sequence of notes is varied by "50 % mutation": roughly half of the notes change
+   — moving to a neighbouring scale note, jumping an octave, repeating the previous
+   note, and so on — and the rest stay as in the source. The result differs every time
+   and never repeats the previous melody.
+3. No rests are made. Rests in the source phrase are filled with notes too, so every step
+   gets a pitch.
+4. The melody is written into the loop's steps as a PITCH recording.
+   - With LENGTH at 1/2 Bar an 8-step melody is made; at 1 Bar or longer a 16-step
+     melody (two 8-step variations in a row), repeated at 2 / 4 Bars.
+   - Any earlier PITCH recording is overwritten for the length of the loop.
+   - Whether a step plays is set by the bottom two pad rows. RANDOM does not change the
+     step on/off.
 
-**音域と音階**
+**Range and scale**
 
-- 書き込まれる音は、すべて Scale ページで設定したスケール（ROOT・SCALE）の音です。
-  ノブ 8 の値と同じく「スケールの何番目の音か」として書かれるので、後からずれることはありません。
-- 音域は**ノブ 8（PITCH）の音を基準に、5 度下から 1 オクターブ半上まで**（-7 〜 +17 半音）。
-  その範囲を出る音はオクターブ単位で移して、範囲全体に散らばるように収めます。音名を保ったまま、
-  ノブ 8 で全体の高さを決められます（押す前にノブ 8 を合わせておく）。
-  ノブ 8 が音域の端に近いときは、範囲をずらさずにその分だけ狭めます（C1 なら C1〜F2）。
+- Every written note is a note of the scale set on the Scale page (ROOT, SCALE). Like
+  knob 8's value it is written as "the nth note of the scale", so it never drifts later.
+- The range is **based on the note of knob 8 (PITCH), from a fifth below to an octave and
+  a half above** (-7 to +17 semitones). Notes outside it are moved by octaves so that
+  they spread across the whole range. The note names are kept and knob 8 sets the
+  overall register (set knob 8 before pressing).
+  When knob 8 is near either end of the pitch range, the range is narrowed rather than
+  shifted (at C1 it is C1 to F2).
 
-**取り消す・作り直す**
+**Undo / try again**
 
-- もう一度押すと、別のメロディで書き直します。
-- **Shift + ノブ 8 にタッチ**で PITCH の記録を消すと、ノブ 8 の音だけに戻ります。
-- REC を ON にしてノブ 8 に触れながら回せば、一部のステップだけ手で書き換えられます。
+- Press it again to write a different melody.
+- **Shift + touch knob 8** clears the PITCH recording and goes back to knob 8's note alone.
+- With REC on, touch and turn knob 8 to rewrite just some of the steps by hand.
 
-#### 元フレーズを入れ替える
+#### Replacing the source phrases
 
-元フレーズの MIDI はビルド時に `dsp.so` に埋め込まれます（Move 上でファイルを読みに
-行くことはしません）。入れ替えたら**ビルドし直して、インストールし直す**必要があります。
+The source MIDI is embedded in `dsp.so` at build time (nothing is read from files on
+Move). After replacing it you must **rebuild and reinstall**.
 
-1. 使いたい MIDI ファイル（Standard MIDI File、`.mid`）を `patterns/` に置きます。
-2. `patterns/patterns.txt` に、使うファイルを 1 行に 1 つずつ書きます（1〜16 個）。
-   行の順番が元フレーズの番号です。`#` から後はコメントです。
+1. Put the MIDI files you want (Standard MIDI Files, `.mid`) in `patterns/`.
+2. List the files to use in `patterns/patterns.txt`, one per line (1 to 16). The line
+   order is the source phrase number. Everything after `#` is a comment.
 
    ```
-   my_riff.mid          # ファイルの先頭から 8 ステップ
-   long_phrase.mid 16   # 17 ステップ目から 8 ステップ（2 列目は開始位置）
+   my_riff.mid          # 8 steps from the start of the file
+   long_phrase.mid 16   # 8 steps from step 17 (the second column is the start)
    ```
 
-   `patterns.txt` を消すと、`patterns/` の `.mid` をすべて名前順に使います。
-3. ビルドしてインストールし、Move を再起動します。
+   If `patterns.txt` is deleted, every `.mid` in `patterns/` is used in name order.
+3. Build, install, and restart Move.
 
    ```bash
    scripts/build.sh arm64
    scripts/install.py http://move.local:7700
    ```
 
-MIDI ファイルのどこが使われるか:
+Which part of a MIDI file is used:
 
-- 各ファイルの**開始位置から 16 分音符 8 個分**だけを使います（それより長い部分は使いません）。
-  長いファイルの別の部分を使いたいときは、2 列目で開始位置（16 分音符単位）を指定します。
-- 使うのは**音程と並び順だけ**です。ベロシティや音の長さは使いません（LUXOR は
-  16 分ごとに同じ強さで鳴るため）。休符は上のとおり音で埋められます。
-- ノートの位置は一番近い 16 分音符に寄せます。同じステップに複数の音がある（和音など）
-  ときは、一番強い（同じなら先の）音を 1 つだけ使います。全トラック・全チャンネルをまとめて読みます。
-- 元フレーズは、読み込むときに一度 **C フリジアン**の音に寄せてから変化させ、
-  最後に設定中の ROOT・SCALE に合わせ直します。C フリジアン以外で書いた MIDI は音が
-  少し変わるので、C を主音にしたフリジアンで書くといちばん元の形が残ります。
-- 開始位置から 8 ステップの中にノートが 1 つも無いファイルは使われません。
-  ファイル名は 31 バイトまで、ノートは 1 ファイル 256 個まで読みます。
+- Only **eight 1/16 notes from the start position** of each file (anything longer is
+  ignored). To use another part of a long file, give the start position (in 1/16 notes)
+  in the second column.
+- Only **the pitches and their order** are used. Velocity and note length are ignored
+  (LUXOR hits every 1/16 at the same strength). Rests are filled with notes as above.
+- Notes are snapped to the nearest 1/16. When a step holds several notes (a chord, for
+  example) only the loudest one (the first, on a tie) is used. All tracks and channels
+  are read together.
+- Source phrases are first snapped to **C Phrygian** when loaded, varied, and finally
+  fitted to the current ROOT and SCALE. MIDI written in anything other than C Phrygian
+  changes slightly, so writing in Phrygian on C keeps the shape best.
+- A file with no notes in the eight steps from its start position is not used. File
+  names are read up to 31 bytes and up to 256 notes per file.
 
-### ノブの動きの記録（詳しく）
+### Recording knob motion (details)
 
-- REC を ON にして Move を再生し、**ノブに触れている間**、そのノブの動きが
-  ループに記録されます。16 分音符 1 つを 8 分割した細かさで記録するので、
-  ゆっくりしたフィルターの動きも滑らかに再現されます。
-- 既に記録のあるノブに触れると、いま鳴っている値からそのまま続けて動かせます
-  （触った瞬間に音が飛びません）。
-- CUTOFF・FM AMT・DRIVE は記録した点の間を滑らかにつなぎ、DECAY・P.ENV・MOD DEC・
-  PITCH は点の値をそのまま使います（ステップごとの変化がぼやけないように）。
-- 停止中はノブに触れても記録しません。記録の位置は、Move の再生開始からの
-  ループの位置です。
-- ノブに触れたまま画面を閉じても、記録は自動で止まります。
-- ノブのタッチが届くのは、LUXOR の画面を開いている間だけです。Schwung の画面を
-  閉じて Move の画面に戻っているときは、ノブは Move 純正側の操作になります。
+- With REC on and Move playing, a knob's motion is recorded into the loop **while you
+  touch it**. It is recorded at 8 points per 1/16 note, so even a slow filter sweep
+  comes back smoothly.
+- Touching a knob that already has a recording lets you continue from the value playing
+  now (the sound does not jump when you touch it).
+- CUTOFF, FM AMT and DRIVE are smoothed between the recorded points; DECAY, P.ENV,
+  MOD DEC and PITCH use each point's value as is (so step-by-step changes stay crisp).
+- Touching a knob while stopped records nothing. The recording position is the loop
+  position counted from Move's transport start.
+- Closing the screen with a knob still touched stops the recording automatically.
+- Knob touches only reach LUXOR while its screen is open. When you leave the Schwung
+  screen for Move's, the knobs control Move itself.
 
-## 音の仕組み
+## How it sounds the way it does
 
 ```
-PITCH（スケールの音）──> LXR-02 DRUM ボイス
-   メインオシレーター ←FM/Mix─ モジュレーター
-     ↑ ピッチ EG（P.ENV / MOD DEC。FM の深さも同じ EG で減る）
-   + トランジェント（Snap / Offset / 短いサンプル）
-   -> フィルター（ZDF ステートバリアブル、8 種類） -> アンプ EG -> ドライブ
-   -> サンプルレート -> パン
-──> LXR-02 FX バス（1 種類を選択、MIX = ドライ / ウェット）
-──> DC 除去 -> 出力（ステレオ）
+PITCH (scale note) ──> LXR-02 DRUM voice
+   main oscillator ←FM/Mix─ modulator
+     ↑ pitch EG (P.ENV / MOD DEC; the FM depth falls with the same EG)
+   + transient (Snap / Offset / short sample)
+   -> filter (ZDF state variable, 8 types) -> amp EG -> drive
+   -> sample rate -> pan
+──> LXR-02 FX bus (one type, MIX = dry / wet)
+──> DC removal -> output (stereo)
 ```
 
-- ボイスと FX の計算は LXR-02 ファームウェアのソースそのものです（固定小数点の 16 bit
-  計算、64 サンプル単位の処理、エンベロープや LFO の更新間隔も本体と同じ）。
-  本体のサンプルレートは 44.14 kHz、Move は 44.1 kHz なので、周波数や時間の計算は
-  44.1 kHz で行っています。
-- 打つたびにアンプ EG は**その時点の音量から**立ち上げ直します（本体と同じ）。
-  前の音が鳴っているうちに次の音が来ても、音が途切れずにつながります。
-- 打つタイミングは、本体と同じく 64 サンプル（1.45 ms）の区切りに合わせます
-  （ずれは最大 0.73 ms）。
-- 本体の出力はコンデンサーで直流分を切っていますが、Move にはそれが無いので、出力の最後に
-  直流分を取り除くフィルター（約 3.5 Hz）を入れています。FX の Tube / Fold は無音時に
-  直流が残る作りなので、その対策です。
+- The voice and FX calculations are the LXR-02 firmware source itself (16-bit
+  fixed-point maths, 64-sample processing, and the same envelope and LFO update
+  intervals as the hardware). The hardware runs at 44.14 kHz and Move at 44.1 kHz, so
+  frequencies and times are computed for 44.1 kHz.
+- Every hit restarts the amp EG **from the current level** (as on the hardware), so a
+  hit arriving while the previous one still rings joins it without a gap.
+- Hits are aligned to 64-sample (1.45 ms) boundaries, as on the hardware (at most
+  0.73 ms off).
+- The hardware's output is AC-coupled by a capacitor, which Move does not have, so a DC
+  blocking filter (about 3.5 Hz) sits at the end of the output. FX Tube / Fold leave DC
+  behind in silence, and this takes care of it.
 
-### 元のファームウェアとの違い
+### Differences from the original firmware
 
-移植は `tests/lxr_ref/` で検証しています。元のファームウェアのコード（パラメーター処理の
-`MidiParser.c`、`DrumVoice.c`、`lfo.c`、`modulationNode.c`、`FxBus.c` など）を無改変のまま
-PC 上で動かす「基準レンダラー」を作り、LUXOR の移植版と同じパラメーター・同じ初期状態・
-同じ乱数で 24 種類の音（全波形・全フィルター・全トランジェント・LFO の全波形・全 FX・
-各パラメーターの最小 / 最大）を鳴らして比べ、**全サンプルが完全に一致**することを確認しています。
+The port is verified in `tests/lxr_ref/`. A "reference renderer" runs the original
+firmware code unmodified on a PC (parameter handling in `MidiParser.c`, `DrumVoice.c`,
+`lfo.c`, `modulationNode.c`, `FxBus.c` and more) and plays 24 sounds through it and
+through LUXOR's port with the same parameters, the same initial state and the same
+random numbers (every waveform, every filter, every transient, every LFO waveform, every
+FX, and each parameter's minimum / maximum). **Every sample matches exactly.**
 
-意図して変えた点は次のとおりです。
+Deliberate changes:
 
-- 範囲外読み出しのバグ 2 か所を修正しています（`dsp/lxr/patched/`。修正内容は各ファイルの
-  先頭に記載）。どちらも本体では隣のメモリの値を読むだけで音には出ないものを、
-  本体と同じ結果になる形で直したものです。
-- 乱数（ノイズ波形・LFO の Random）は本体のハードウェア乱数の代わりにインスタンスごとの
-  疑似乱数を使います。
-- LFO のテンポ同期は、本体の整数 BPM ではなく Move のテンポ（小数を含む）を使います。
-- ベロシティは常に 127 です（LUXOR のステップには強弱がありません）。このため本体の
-  ベロシティ変調（VEL DEST / VEL AMT / VEL VOL）は入れていません。
-- FX の設定を FX ごとに別々に持つ、FX 切り替え時の 10 ms クロスフェード、Delay を
-  選び直したときにディレイの中身を空にする、停止時の 25 ms フェード、出力の DC 除去は
-  LUXOR で加えたものです。
-- Ring の WAVE を変えたときは、すぐに新しい波形の音程で鳴ります（本体では次に FREQ を
-  動かすまで、前の波形のときの音程計算が残ります）。
+- Two out-of-bounds reads are fixed (`dsp/lxr/patched/`; each fix is described at the
+  top of its file). On the hardware both only read a neighbouring memory value that
+  never reaches the sound, and they are fixed in a way that gives the same result as
+  the hardware.
+- Random numbers (the Noise waveform, the LFO's Random) come from a per-instance
+  pseudo-random generator instead of the hardware random number generator.
+- LFO tempo sync uses Move's tempo (with its fractional part) instead of the hardware's
+  integer BPM.
+- Velocity is always 127 (LUXOR's steps have no dynamics), so the hardware's velocity
+  modulation (VEL DEST / VEL AMT / VEL VOL) is not included.
+- Separate settings per FX, the 10 ms crossfade on FX switches, clearing the delay line
+  when Delay is re-selected, the 25 ms fade on Stop and the output DC removal are
+  LUXOR additions.
+- Changing Ring's WAVE plays the new waveform at the right pitch immediately (on the
+  hardware the previous waveform's pitch calculation lingers until FREQ is next moved).
+- The DECAY knob's curve differs from the hardware's: the knob covers the hardware's
+  full range, but more of its travel is given to short decays (see the DECAY row above).
+  The voice calculations themselves are unchanged.
 
+## Licence
 
-## ライセンス
+- **LUXOR as a whole (this repository, `dsp.so` and the distributed package
+  `luxor-module.tar.gz`) is GPL-3.0-only** (`LICENSE`), because its engine is a port of
+  the LXR-02 firmware (Copyright (C) 2012-2026 Erica Synths, GPL-3.0-only, additional
+  terms in `third_party/lxr/NOTICE.md`). LUXOR's own code is Copyright (C) 2026
+  Hiro Ikezawa, also GPL-3.0-only.
+- As an exception, the Schwung plugin API header (`third_party/schwung/`) stays under its
+  original MIT licence.
+- If you pass the package on, make this repository's full source available too (a
+  condition of GPL-3.0).
+- See `THIRD_PARTY_LICENSES.md` for the other bundled code.
 
-- **LUXOR 全体（このリポジトリ、`dsp.so`、配布パッケージ `luxor-module.tar.gz`）が
-  GPL-3.0-only です**（`LICENSE`）。音源が LXR-02 ファームウェア（Copyright (C) 2012-2026
-  Erica Synths、GPL-3.0-only、追加条項は `third_party/lxr/NOTICE.md`）の移植だからです。
-  LUXOR 自身のコードは Copyright (C) 2026 Hiro Ikezawa で、同じく GPL-3.0-only です。
-- 例外として、Schwung のプラグイン API ヘッダー（`third_party/schwung/`）は元の MIT のままです。
-- パッケージを人に渡すときは、このリポジトリのソース一式も受け取れるようにしてください
-  （GPL-3.0 の条件）。
-- 同梱しているほかのコードの詳細は `THIRD_PARTY_LICENSES.md` を見てください。
-
-**商標について**: 「Erica Synths」「LXR」「LXR-02」は Erica Synths の名称です。LUXOR は
-Erica Synths とは無関係の非公式ソフトウェアで、Erica Synths が作成・承認・サポートする
-ものではありません。これらの名称は、移植元のソースの出どころを示すためだけに使っています。
+**Trademarks**: "Erica Synths", "LXR" and "LXR-02" are names of Erica Synths. LUXOR is
+unofficial software, not affiliated with Erica Synths, and is not made, endorsed or
+supported by Erica Synths. These names are used only to identify where the ported source
+comes from.
