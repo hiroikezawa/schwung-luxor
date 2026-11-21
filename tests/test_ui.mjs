@@ -19,7 +19,8 @@ const shared = process.env.BK_SHARED || path.join(root, "src/shared");
 const { createController } = await load(path.join(shared, "param_pages/page_controller.mjs"));
 const { decodeInput, applyInput } = await load(path.join(shared, "param_pages/page_input.mjs"));
 const { createFramebuffer, drawContext } = await load(path.join(root, "tools/param-pages/harness.mjs"));
-const { createUi, MAIN_KEYS, STATUS_EVERY_TICKS, HEARTBEAT_MS, LED } =
+const { createUi, MAIN_KEYS, STATUS_EVERY_TICKS, HEARTBEAT_MS, LED,
+        PRESET_FIRST, PRESETS, PRESET_PATH, parsePresets } =
     await load(path.join(here, "../ui_core.mjs"));
 
 let failures = 0;
@@ -49,6 +50,8 @@ const reads = [];
 let status = "0,-1,0,16,0";
 let hwShift = false, shown = true, padBlocked = false;
 const leds = {};
+const files = new Map();
+let stateBlob = '{"v":4,"p":[1]}';
 const store = {
     get(key) {
         reads.push(key);
@@ -57,6 +60,7 @@ const store = {
         if (key === "chain_params") return JSON.stringify(chainParams);
         if (key === "motion_status") return status;
         if (key === "pitch_names") return pitchNames;
+        if (key === "state") return stateBlob;
         if (key === "gate_status") return gates.map((g) => g ? "1" : "0").join("");
         if (key.startsWith("eff_")) return values[key.slice(4)] ?? null;
         if (key in values) return values[key];
@@ -87,6 +91,9 @@ const ui = createUi({
     padBlock: (on) => { padBlocked = on; },
     sendLed: (n, col) => { leds[n] = col; return true; },
     padSnapshot: () => ({ "68": 5, "99": 7 }),
+    readFile: (p) => files.get(p) ?? null,
+    writeFile: (p, t) => { files.set(p, t); return true; },
+    ensureDir: () => true,
 });
 
 function ticks(n) { for (let i = 0; i < n; i++) { clock += 17; ui.tick(); } }
@@ -160,7 +167,7 @@ ui.onMidi([0x80, 69, 0]);
 ticks(STATUS_EVERY_TICKS);
 check(ui.state.gates[1] === "0", "the poll agrees: " + ui.state.gates);
 const w0 = writes.length;
-ui.onMidi([0x90, 90, 100]); ui.onMidi([0x80, 90, 0]);   /* an unassigned pad */
+ui.onMidi([0x90, 97, 100]); ui.onMidi([0x80, 97, 0]);   /* an unassigned pad */
 check(writes.length === w0, "unassigned pads do nothing");
 /* a 1/2-bar loop darkens the second row; a 2-bar loop repeats the 16 per bar */
 status = "0,3,0,8,1";
@@ -281,6 +288,26 @@ check(touchesSent().at(-1) === "p_env,0", "a held knob is released on leave");
 shown = true;
 ticks(1);
 check(padBlocked === true, "taken again when shown");
+
+/* ---- the preset pads (second row, 84-91) ---------------------------------- */
+check(PRESET_FIRST === 84 && PRESETS === 8, "presets are pads 84-91");
+check(leds[86] === LED.OFF, "an empty preset is dark");
+let mark = writes.length;
+ui.onMidi([0x90, 86, 127]); ui.onMidi([0x80, 86, 0]);
+check(!writes.slice(mark).some(([k]) => k === "state"), "an empty preset loads nothing");
+check(/EMPTY 3/.test(ui.title()), "an empty preset says so: " + ui.title());
+hwShift = true; ticks(1);
+ui.onMidi([0x90, 86, 127]); ui.onMidi([0x80, 86, 0]);
+hwShift = false; ticks(1);
+check(parsePresets(files.get(PRESET_PATH))[2] === stateBlob, "Shift+pad stores the state");
+check(/SAVED PRESET 3/.test(ui.title()), "save confirmed: " + ui.title());
+check(leds[86] === LED.PRESET_CURRENT, "the saved preset is lit white");
+const saved = stateBlob;
+stateBlob = "other";
+mark = writes.length;
+ui.onMidi([0x90, 86, 127]); ui.onMidi([0x80, 86, 0]);
+check(writes.slice(mark).some(([k, v]) => k === "state" && v === saved), "a tap recalls the saved state");
+clock += 2000; ticks(1);
 
 /* ---- Back at the grid leaves ---------------------------------------------- */
 ui.onMidi([0x90, 6, 127]);

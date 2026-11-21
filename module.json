@@ -2,7 +2,7 @@
   "id": "luxor",
   "name": "LUXOR",
   "abbrev": "LUXOR",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Auto 1/16 drum voice ported from the open-source LXR-02 firmware's DRUM engine and FX (unofficial), played by touch-recorded knob motion",
   "author": "Hiro Ikezawa",
   "api_version": 2,

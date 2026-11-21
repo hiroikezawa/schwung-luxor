@@ -58,6 +58,9 @@ const core = createUi({
     sendLed: (note, color) => has("move_midi_internal_send")
         ? move_midi_internal_send([0x09, 0x90, note, color]) !== false : false,
     padSnapshot: () => has("shadow_get_pad_led_snapshot") ? shadow_get_pad_led_snapshot() : null,
+    readFile: (path) => has("host_read_file") ? host_read_file(path) : null,
+    writeFile: (path, text) => has("host_write_file") ? host_write_file(path, text) === true : false,
+    ensureDir: (path) => has("host_ensure_dir") ? host_ensure_dir(path) === true : false,
 });
 
 globalThis.chain_ui = {

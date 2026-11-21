@@ -75,8 +75,22 @@
       "lines": [
         "Top right: REC on/off",
         "Next: RANDOM phrase",
+        "Row 2: presets 1-8",
         "Bottom 2 rows: 16 trigs",
         "White = playing step"
+      ]
+    },
+    {
+      "title": "Presets",
+      "lines": [
+        "Row 2 pads:",
+        "tap = recall,",
+        "Shift+tap = save.",
+        "Saves knobs, motion,",
+        "steps and scale.",
+        "Dark = empty,",
+        "dim = saved,",
+        "white = current."
       ]
     },
     {
